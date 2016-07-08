@@ -5,11 +5,12 @@ import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
 import akka.http.scaladsl.unmarshalling.Unmarshaller
 import akka.stream.ActorMaterializer
 import akka.testkit.TestKit
-import edu.eckerd.integrations.slate.core.{DefaultJsonProtocol, RequestTrait}
-import edu.eckerd.integrations.slate.core.model.{SlateRequest, SlateResponse}
+import edu.eckerd.integrations.slate.core.DefaultJsonProtocol
+import edu.eckerd.integrations.slate.core.RequestTrait
+import edu.eckerd.integrations.slate.core.model.SlateRequest
+import edu.eckerd.integrations.slate.core.model.SlateResponse
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 import org.scalamock.scalatest.MockFactory
-
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.concurrent.Future
@@ -35,8 +36,24 @@ with WordSpecLike with Matchers with MockFactory with BeforeAndAfterAll {
     reqRespPairs.foreach{
       case (slateRequest, responseString) =>
 
-        val req = HttpRequest(HttpMethods.GET, slateRequest.link, headers = List(Authorization(BasicHttpCredentials(slateRequest.user, slateRequest.password))))
-        val resp = HttpResponse(status = StatusCodes.OK, entity = HttpEntity(ContentType(MediaTypes.`application/json`), responseString))
+        val req = HttpRequest(
+          HttpMethods.GET,
+          slateRequest.link,
+          headers = List(
+            Authorization(
+              BasicHttpCredentials(slateRequest.user, slateRequest.password)
+            )
+          )
+        )
+        val resp = HttpResponse(
+          status = StatusCodes.OK,
+          entity = HttpEntity(
+            ContentType(
+              MediaTypes.`application/json`
+            ),
+            responseString
+          )
+        )
         mock.expects(req).returning(Future.successful(resp))
     }
 
@@ -48,10 +65,9 @@ with WordSpecLike with Matchers with MockFactory with BeforeAndAfterAll {
       val myProtocol = new DefaultJsonProtocol {}
       import myProtocol._
 
-      val string = "yellow"
-      val expectedOutcome = List(string)
+      val expectedOutcome = List("yellow")
 
-      val json = s"""{"row" : ["$string"]}"""
+      val json = s"""{"row" : ["yellow"]}"""
       val request = SlateRequest("link", "user", "password")
       val mock = new MockRequest[String](Seq((request, json)))
       Await.result(mock.retrieve(request), 1.second) should be (expectedOutcome)
@@ -64,19 +80,7 @@ with WordSpecLike with Matchers with MockFactory with BeforeAndAfterAll {
       }
       import myProtocol._
       val expectedOutcome = List(NameID("Chris", "1528745"), NameID("Frank", "1259584"))
-      val json =
-        """{"row" : [
-              |{
-                |"name":"Chris",
-                |"id":"1528745"
-              |},
-              |{
-                |"name":"Frank",
-                |"id":"1259584"
-              |}
-            |]
-          |}""".stripMargin
-
+      val json ="""{"row":[{"name":"Chris", "id":"1528745"},{"name":"Frank","id":"1259584"}]}"""
       val request = SlateRequest("link", "user", "password")
       val mock = new MockRequest[NameID](Seq((request, json)))
       Await.result(mock.retrieve(request), 1.second) should be (expectedOutcome)

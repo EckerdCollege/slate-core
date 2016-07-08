@@ -43,13 +43,17 @@ trait RequestTrait[A]{
 
 }
 
-class Request[A](
+class Request[A](slateRequest: SlateRequest)(
                   implicit val actorSystem: ActorSystem,
                   val actorMaterializer: ActorMaterializer,
                   val um: Unmarshaller[ResponseEntity, SlateResponse[A]]
-                ) extends RequestTrait[A]{
+                )
+  extends RequestTrait[A] {
+
+  def retrieve(): Future[Seq[A]] = super.retrieve(slateRequest)
   override val ec: ExecutionContext = actorSystem.dispatcher
   override def responder = Http().singleRequest(_)
+
 }
 
 object Request {
@@ -63,36 +67,43 @@ object Request {
     SlateRequest(link, user, password)
   }
 
-  def TransformData[A](slateRequest: SlateRequest)(
+  def SingleRequest[A](slateRequest: SlateRequest)(
     implicit ec: ExecutionContext,
     um: Unmarshaller[ResponseEntity, SlateResponse[A]]
   ): Future[Seq[A]] = {
 
     implicit val system = ActorSystem()
     implicit val materializer: ActorMaterializer = ActorMaterializer(ActorMaterializerSettings(system))
-    val authorization = Authorization(BasicHttpCredentials(slateRequest.user, slateRequest.password))
+//    val authorization = Authorization(BasicHttpCredentials(slateRequest.user, slateRequest.password))
 
-    Http(system)
-      .singleRequest(
-        HttpRequest(
-          uri = slateRequest.link,
-          headers = List(authorization)
-        )
-      )
-      .flatMap {
-      case HttpResponse(StatusCodes.OK, headers, entity, _) =>
-        for {
-          slateResponse <- Unmarshal(entity).to[SlateResponse[A]]
-          shutdownHttp <- Http(system).shutdownAllConnectionPools()
-          terminate <- system.terminate()
-        } yield slateResponse.row
-      case HttpResponse(code, _, _, _) =>
-        for {
-          shutdownHttp <- Http(system).shutdownAllConnectionPools()
-          terminate <- system.terminate()
-          failure <- Future.failed(new Throwable(s"Received invalid response code - $code"))
-        } yield failure
-    }
+    val returnValue = new Request(slateRequest).retrieve()
+
+    for {
+      finalValue <- returnValue
+      terminate <- system.terminate()
+    } yield finalValue
+
+//    Http(system)
+//      .singleRequest(
+//        HttpRequest(
+//          uri = slateRequest.link,
+//          headers = List(authorization)
+//        )
+//      )
+//      .flatMap {
+//      case HttpResponse(StatusCodes.OK, headers, entity, _) =>
+//        for {
+//          slateResponse <- Unmarshal(entity).to[SlateResponse[A]]
+//          shutdownHttp <- Http(system).shutdownAllConnectionPools()
+//          terminate <- system.terminate()
+//        } yield slateResponse.row
+//      case HttpResponse(code, _, _, _) =>
+//        for {
+//          shutdownHttp <- Http(system).shutdownAllConnectionPools()
+//          terminate <- system.terminate()
+//          failure <- Future.failed(new Throwable(s"Received invalid response code - $code"))
+//        } yield failure
+//    }
   }
 
 }
