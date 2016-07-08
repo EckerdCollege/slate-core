@@ -8,6 +8,7 @@ libraryDependencies ++= {
   Seq(
     "com.typesafe.akka" %% "akka-http-core" % "2.4.7",
     "com.typesafe.akka" %% "akka-http-testkit" % "2.4.7" % "test",
-    "com.typesafe.akka" %% "akka-http-spray-json-experimental" % "2.4.7"
+    "com.typesafe.akka" %% "akka-http-spray-json-experimental" % "2.4.7",
+    "org.scalamock" %% "scalamock-scalatest-support" % "3.2.2" % "test"
   )
 }
