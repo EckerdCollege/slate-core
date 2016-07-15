@@ -6,7 +6,8 @@ jdk:
 
 sudo: false
 
-script: sbt ++$TRAVIS_SCALA_VERSION clean coverage test
+script:
+  - sbt ++$TRAVIS_SCALA_VERSION clean coverage test coverageReport
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
