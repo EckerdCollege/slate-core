@@ -74,7 +74,6 @@ object Request {
 
     implicit val system = ActorSystem()
     implicit val materializer: ActorMaterializer = ActorMaterializer(ActorMaterializerSettings(system))
-//    val authorization = Authorization(BasicHttpCredentials(slateRequest.user, slateRequest.password))
 
     val returnValue = new Request(slateRequest).retrieve()
 
@@ -82,28 +81,5 @@ object Request {
       finalValue <- returnValue
       terminate <- system.terminate()
     } yield finalValue
-
-//    Http(system)
-//      .singleRequest(
-//        HttpRequest(
-//          uri = slateRequest.link,
-//          headers = List(authorization)
-//        )
-//      )
-//      .flatMap {
-//      case HttpResponse(StatusCodes.OK, headers, entity, _) =>
-//        for {
-//          slateResponse <- Unmarshal(entity).to[SlateResponse[A]]
-//          shutdownHttp <- Http(system).shutdownAllConnectionPools()
-//          terminate <- system.terminate()
-//        } yield slateResponse.row
-//      case HttpResponse(code, _, _, _) =>
-//        for {
-//          shutdownHttp <- Http(system).shutdownAllConnectionPools()
-//          terminate <- system.terminate()
-//          failure <- Future.failed(new Throwable(s"Received invalid response code - $code"))
-//        } yield failure
-//    }
   }
-
 }

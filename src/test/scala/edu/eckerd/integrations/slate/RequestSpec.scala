@@ -88,6 +88,13 @@ with WordSpecLike with Matchers with MockFactory with BeforeAndAfterAll {
 
   }
 
+  "Companion Object" should {
+    "be able to parse a configuration" in {
+      val r = edu.eckerd.integrations.slate.core.Request.forConfig("slate")
+      r should be (SlateRequest("www.test.com", "testUser", "testPassword"))
+    }
+  }
+
   override def afterAll(): Unit = {
     Await.ready(system.terminate(), Duration.Inf)
   }
