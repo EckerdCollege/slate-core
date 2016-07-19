@@ -3,14 +3,15 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
 import akka.http.scaladsl.unmarshalling.Unmarshaller
-import akka.stream.ActorMaterializer
+import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.testkit.TestKit
 import edu.eckerd.integrations.slate.core.DefaultJsonProtocol
 import edu.eckerd.integrations.slate.core.RequestTrait
-import edu.eckerd.integrations.slate.core.model.SlateRequest
+import edu.eckerd.integrations.slate.core.Request
 import edu.eckerd.integrations.slate.core.model.SlateResponse
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 import org.scalamock.scalatest.MockFactory
+
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.concurrent.Future
@@ -20,7 +21,9 @@ import scala.concurrent.Future
 class RequestSpec extends TestKit(ActorSystem("RequestSpec"))
 with WordSpecLike with Matchers with MockFactory with BeforeAndAfterAll {
 
-  class MockRequest[A](reqRespPairs:Seq[(SlateRequest, String)])
+  private case class SlateRequest(user: String, password: String, link: String)
+
+  class MockRequest[A](request: SlateRequest, jsonResponse: String)
                       (implicit val um: Unmarshaller[ResponseEntity, SlateResponse[A]]) extends RequestTrait[A]{
 
     override implicit val actorSystem = system
@@ -29,19 +32,23 @@ with WordSpecLike with Matchers with MockFactory with BeforeAndAfterAll {
 
     override implicit val actorMaterializer = ActorMaterializer()(system)
 
+    val user = request.user
+    val password = request.password
+
+    val credentials = BasicHttpCredentials(user, password)
+
+    val link = request.link
+
     val mock = mockFunction[HttpRequest, Future[HttpResponse]]
 
     override val responder: HttpResponder = mock
 
-    reqRespPairs.foreach{
-      case (slateRequest, responseString) =>
-
-        val req = HttpRequest(
+    val req = HttpRequest(
           HttpMethods.GET,
-          slateRequest.link,
+          link,
           headers = List(
             Authorization(
-              BasicHttpCredentials(slateRequest.user, slateRequest.password)
+              credentials
             )
           )
         )
@@ -51,11 +58,11 @@ with WordSpecLike with Matchers with MockFactory with BeforeAndAfterAll {
             ContentType(
               MediaTypes.`application/json`
             ),
-            responseString
+            jsonResponse
           )
         )
         mock.expects(req).returning(Future.successful(resp))
-    }
+
 
   }
 
@@ -69,8 +76,8 @@ with WordSpecLike with Matchers with MockFactory with BeforeAndAfterAll {
 
       val json = s"""{"row" : ["yellow"]}"""
       val request = SlateRequest("link", "user", "password")
-      val mock = new MockRequest[String](Seq((request, json)))
-      Await.result(mock.retrieve(request), 1.second) should be (expectedOutcome)
+      val mock = new MockRequest[String](request, json)
+      Await.result(mock.retrieve(), 1.second) should be (expectedOutcome)
     }
 
     "Marshall Responses to Custom Classes" in {
@@ -82,16 +89,41 @@ with WordSpecLike with Matchers with MockFactory with BeforeAndAfterAll {
       val expectedOutcome = List(NameID("Chris", "1528745"), NameID("Frank", "1259584"))
       val json ="""{"row":[{"name":"Chris", "id":"1528745"},{"name":"Frank","id":"1259584"}]}"""
       val request = SlateRequest("link", "user", "password")
-      val mock = new MockRequest[NameID](Seq((request, json)))
-      Await.result(mock.retrieve(request), 1.second) should be (expectedOutcome)
+      val mock = new MockRequest[NameID](request, json)
+      Await.result(mock.retrieve(), 1.second) should be (expectedOutcome)
     }
 
   }
 
+  "Apply" should {
+    "be able to create a new Request" in {
+      case class NameID(name: String, id: String)
+      object myProtocol extends DefaultJsonProtocol {
+        implicit val NameIDFormat = jsonFormat2(NameID)
+      }
+      import myProtocol._
+      implicit val materializer = ActorMaterializer()
+
+      val r = Request[NameID]("user", "password", "link")
+
+      r.link should be ("link")
+      r.credentials should be (BasicHttpCredentials("user", "password"))
+    }
+  }
+
   "Companion Object" should {
     "be able to parse a configuration" in {
-      val r = edu.eckerd.integrations.slate.core.Request.forConfig("slate")
-      r should be (SlateRequest("www.test.com", "testUser", "testPassword"))
+      case class NameID(name: String, id: String)
+      object myProtocol extends DefaultJsonProtocol {
+        implicit val NameIDFormat = jsonFormat2(NameID)
+      }
+      import myProtocol._
+      implicit val materializer = ActorMaterializer()
+
+      val r = Request.forConfig[NameID]("slate")
+
+      r.link should be ("www.test.com")
+      r.credentials should be (BasicHttpCredentials("testUser", "testPassword"))
     }
   }
 
