@@ -21,9 +21,11 @@ import scala.concurrent.Future
 class RequestSpec extends TestKit(ActorSystem("RequestSpec"))
 with WordSpecLike with Matchers with MockFactory with BeforeAndAfterAll {
 
-  private case class SlateRequest(user: String, password: String, link: String)
+  case class SlateRequest(user: String, password: String, link: String)
 
-  class MockRequest[A](request: SlateRequest, jsonResponse: String)
+  case class TestResponse(jsonResponse: String, statusCode: StatusCode)
+
+  class MockRequest[A](request: SlateRequest, testResponse: TestResponse)
                       (implicit val um: Unmarshaller[ResponseEntity, SlateResponse[A]]) extends RequestTrait[A]{
 
     override implicit val actorSystem = system
@@ -53,12 +55,12 @@ with WordSpecLike with Matchers with MockFactory with BeforeAndAfterAll {
           )
         )
         val resp = HttpResponse(
-          status = StatusCodes.OK,
+          testResponse.statusCode,
           entity = HttpEntity(
             ContentType(
               MediaTypes.`application/json`
             ),
-            jsonResponse
+            testResponse.jsonResponse
           )
         )
         mock.expects(req).returning(Future.successful(resp))
@@ -76,7 +78,8 @@ with WordSpecLike with Matchers with MockFactory with BeforeAndAfterAll {
 
       val json = s"""{"row" : ["yellow"]}"""
       val request = SlateRequest("link", "user", "password")
-      val mock = new MockRequest[String](request, json)
+      val response = TestResponse(json, StatusCodes.OK)
+      val mock = new MockRequest[String](request, response)
       Await.result(mock.retrieve(), 1.second) should be (expectedOutcome)
     }
 
@@ -89,8 +92,38 @@ with WordSpecLike with Matchers with MockFactory with BeforeAndAfterAll {
       val expectedOutcome = List(NameID("Chris", "1528745"), NameID("Frank", "1259584"))
       val json ="""{"row":[{"name":"Chris", "id":"1528745"},{"name":"Frank","id":"1259584"}]}"""
       val request = SlateRequest("link", "user", "password")
-      val mock = new MockRequest[NameID](request, json)
+      val response = TestResponse(json, StatusCodes.OK)
+      val mock = new MockRequest[NameID](request, response)
       Await.result(mock.retrieve(), 1.second) should be (expectedOutcome)
+    }
+
+    "Respond with an Empty Sequence on Error Code 500" in {
+      case class NameID(name: String, id: String)
+      object myProtocol extends DefaultJsonProtocol {
+        implicit val NameIDFormat = jsonFormat2(NameID)
+      }
+      import myProtocol._
+      val expectedOutcome = List[NameID]()
+      val json =""""""
+      val request = SlateRequest("link", "user", "password")
+      val response = TestResponse(json, StatusCodes.InternalServerError)
+      val mock = new MockRequest[NameID](request, response)
+      Await.result(mock.retrieve(), 1.second) should be (expectedOutcome)
+    }
+
+    "Throw An Error On Another Status Code" in {
+      case class NameID(name: String, id: String)
+      object myProtocol extends DefaultJsonProtocol {
+        implicit val NameIDFormat = jsonFormat2(NameID)
+      }
+      import myProtocol._
+      val json =""""""
+      val request = SlateRequest("link", "user", "password")
+      val response = TestResponse(json, StatusCodes.BadRequest)
+      val mock = new MockRequest[NameID](request, response)
+      intercept[Throwable]{
+        Await.result(mock.retrieve(), 1.second)
+      }
     }
 
   }
