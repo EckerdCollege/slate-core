@@ -3,6 +3,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
 import akka.http.scaladsl.unmarshalling.Unmarshaller
+import akka.http.scaladsl.unmarshalling.Unmarshaller.UnsupportedContentTypeException
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.testkit.TestKit
 import edu.eckerd.integrations.slate.core.DefaultJsonProtocol
@@ -15,6 +16,7 @@ import org.scalamock.scalatest.MockFactory
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 /**
   * Created by davenpcm on 7/7/16.
   */
@@ -126,6 +128,37 @@ with WordSpecLike with Matchers with MockFactory with BeforeAndAfterAll {
       }
     }
 
+    "should be able to make a request" in {
+      case class NameID(name: String, id: String)
+      object myProtocol extends DefaultJsonProtocol {
+        implicit val NameIDFormat = jsonFormat2(NameID)
+      }
+      import myProtocol._
+      implicit val materializer = ActorMaterializer()
+
+      val r = Request[NameID]("user", "password", "link")
+
+      intercept[IllegalUriException]{
+        Await.result(r.retrieve(), 1.second)
+      }
+    }
+
+    "should be unable to parse a request to a non-json endpoint" in {
+      case class NameID(name: String, id: String)
+      object myProtocol extends DefaultJsonProtocol {
+        implicit val NameIDFormat = jsonFormat2(NameID)
+      }
+      import myProtocol._
+      implicit val materializer = ActorMaterializer()
+
+      val r = Request[NameID]("user", "password", "http://www.google.com")
+      intercept[UnsupportedContentTypeException]{
+        Await.result(r.retrieve(), 1.second)
+      }
+    }
+
+
+
   }
 
   "Apply" should {
@@ -158,6 +191,34 @@ with WordSpecLike with Matchers with MockFactory with BeforeAndAfterAll {
       r.link should be ("www.test.com")
       r.credentials should be (BasicHttpCredentials("testUser", "testPassword"))
     }
+
+    "SingleRequest should be able to make a request" in {
+      case class NameID(name: String, id: String)
+      object myProtocol extends DefaultJsonProtocol {
+        implicit val NameIDFormat = jsonFormat2(NameID)
+      }
+      import myProtocol._
+      val r = Request.SingleRequest[NameID]("user", "password", "http://www.google.com")
+      intercept[UnsupportedContentTypeException]{
+        Await.result(r, 1.second)
+      }
+    }
+
+    "SingleRequestForConfig should fail to parse an invalid uri" in {
+      case class NameID(name: String, id: String)
+      object myProtocol extends DefaultJsonProtocol {
+        implicit val NameIDFormat = jsonFormat2(NameID)
+      }
+      import myProtocol._
+      implicit val materializer = ActorMaterializer()
+
+      val r = Request.SingleRequestForConfig[NameID]("slate")
+      intercept[IllegalUriException] {
+        Await.result(r, 1.second)
+      }
+    }
+
+
   }
 
   override def afterAll(): Unit = {

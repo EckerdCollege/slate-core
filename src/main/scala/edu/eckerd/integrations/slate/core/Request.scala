@@ -139,7 +139,7 @@ object Request {
 
     for {
       finalValue <- returnValue
-      terminate <- system.terminate()
+      _ <- system.terminate()
     } yield finalValue
   }
 
