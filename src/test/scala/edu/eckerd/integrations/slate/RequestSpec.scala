@@ -6,11 +6,9 @@ import akka.http.scaladsl.unmarshalling.Unmarshaller
 import akka.http.scaladsl.unmarshalling.Unmarshaller.UnsupportedContentTypeException
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.testkit.TestKit
-import edu.eckerd.integrations.slate.core.DefaultJsonProtocol
-import edu.eckerd.integrations.slate.core.RequestTrait
-import edu.eckerd.integrations.slate.core.Request
+import edu.eckerd.integrations.slate.core.{DefaultJsonProtocol, Request, RequestLike}
 import edu.eckerd.integrations.slate.core.model.SlateResponse
-import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
+import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers, WordSpecLike}
 import org.scalamock.scalatest.MockFactory
 
 import scala.concurrent._
@@ -21,205 +19,93 @@ import scala.concurrent.ExecutionContext.Implicits.global
   * Created by davenpcm on 7/7/16.
   */
 class RequestSpec extends TestKit(ActorSystem("RequestSpec"))
-with WordSpecLike with Matchers with MockFactory with BeforeAndAfterAll {
+  with FlatSpecLike with Matchers with MockFactory with BeforeAndAfterAll {
 
-  case class SlateRequest(user: String, password: String, link: String)
-
-  case class TestResponse(jsonResponse: String, statusCode: StatusCode)
-
-  class MockRequest[A](request: SlateRequest, testResponse: TestResponse)
-                      (implicit val um: Unmarshaller[ResponseEntity, SlateResponse[A]]) extends RequestTrait[A]{
-
-    override implicit val actorSystem = system
-
-    override implicit val ec = actorSystem.dispatcher
-
-    override implicit val actorMaterializer = ActorMaterializer()(system)
-
-    val user = request.user
-    val password = request.password
-
-    val credentials = BasicHttpCredentials(user, password)
-
-    val link = request.link
-
-    val mock = mockFunction[HttpRequest, Future[HttpResponse]]
-
-    override val responder: HttpResponder = mock
-
-    val req = HttpRequest(
-          HttpMethods.GET,
-          link,
-          headers = List(
-            Authorization(
-              credentials
-            )
-          )
-        )
-        val resp = HttpResponse(
-          testResponse.statusCode,
-          entity = HttpEntity(
-            ContentType(
-              MediaTypes.`application/json`
-            ),
-            testResponse.jsonResponse
-          )
-        )
-        mock.expects(req).returning(Future.successful(resp))
-
-
-  }
-
-  "Request" should {
-
-    "Marshall Responses to Strings" in {
-      val myProtocol = new DefaultJsonProtocol {}
-      import myProtocol._
-
-      val expectedOutcome = List("yellow")
-
-      val json = s"""{"row" : ["yellow"]}"""
-      val request = SlateRequest("link", "user", "password")
-      val response = TestResponse(json, StatusCodes.OK)
-      val mock = new MockRequest[String](request, response)
-      Await.result(mock.retrieve(), 1.second) should be (expectedOutcome)
+  "Request" should "should be able to make a request" in {
+    case class NameID(name: String, id: String)
+    object myProtocol extends DefaultJsonProtocol {
+      implicit val NameIDFormat = jsonFormat2(NameID)
     }
+    import myProtocol._
+    implicit val materializer = ActorMaterializer()
 
-    "Marshall Responses to Custom Classes" in {
-      case class NameID(name: String, id: String)
-      object myProtocol extends DefaultJsonProtocol {
-        implicit val NameIDFormat = jsonFormat2(NameID)
-      }
-      import myProtocol._
-      val expectedOutcome = List(NameID("Chris", "1528745"), NameID("Frank", "1259584"))
-      val json ="""{"row":[{"name":"Chris", "id":"1528745"},{"name":"Frank","id":"1259584"}]}"""
-      val request = SlateRequest("link", "user", "password")
-      val response = TestResponse(json, StatusCodes.OK)
-      val mock = new MockRequest[NameID](request, response)
-      Await.result(mock.retrieve(), 1.second) should be (expectedOutcome)
-    }
+    val r = Request[NameID]("user", "password", "link")
 
-    "Respond with an Empty Sequence on Error Code 500" in {
-      case class NameID(name: String, id: String)
-      object myProtocol extends DefaultJsonProtocol {
-        implicit val NameIDFormat = jsonFormat2(NameID)
-      }
-      import myProtocol._
-      val expectedOutcome = List[NameID]()
-      val json =""""""
-      val request = SlateRequest("link", "user", "password")
-      val response = TestResponse(json, StatusCodes.InternalServerError)
-      val mock = new MockRequest[NameID](request, response)
-      Await.result(mock.retrieve(), 1.second) should be (expectedOutcome)
-    }
-
-    "Throw An Error On Another Status Code" in {
-      case class NameID(name: String, id: String)
-      object myProtocol extends DefaultJsonProtocol {
-        implicit val NameIDFormat = jsonFormat2(NameID)
-      }
-      import myProtocol._
-      val json =""""""
-      val request = SlateRequest("link", "user", "password")
-      val response = TestResponse(json, StatusCodes.BadRequest)
-      val mock = new MockRequest[NameID](request, response)
-      intercept[Throwable]{
-        Await.result(mock.retrieve(), 1.second)
-      }
-    }
-
-    "should be able to make a request" in {
-      case class NameID(name: String, id: String)
-      object myProtocol extends DefaultJsonProtocol {
-        implicit val NameIDFormat = jsonFormat2(NameID)
-      }
-      import myProtocol._
-      implicit val materializer = ActorMaterializer()
-
-      val r = Request[NameID]("user", "password", "link")
-
-      intercept[IllegalUriException]{
-        Await.result(r.retrieve(), 1.second)
-      }
-    }
-
-    "should be unable to parse a request to a non-json endpoint" in {
-      case class NameID(name: String, id: String)
-      object myProtocol extends DefaultJsonProtocol {
-        implicit val NameIDFormat = jsonFormat2(NameID)
-      }
-      import myProtocol._
-      implicit val materializer = ActorMaterializer()
-
-      val r = Request[NameID]("user", "password", "http://www.google.com")
-      intercept[UnsupportedContentTypeException]{
-        Await.result(r.retrieve(), 1.second)
-      }
-    }
-
-
-
-  }
-
-  "Apply" should {
-    "be able to create a new Request" in {
-      case class NameID(name: String, id: String)
-      object myProtocol extends DefaultJsonProtocol {
-        implicit val NameIDFormat = jsonFormat2(NameID)
-      }
-      import myProtocol._
-      implicit val materializer = ActorMaterializer()
-
-      val r = Request[NameID]("user", "password", "link")
-
-      r.link should be ("link")
-      r.credentials should be (BasicHttpCredentials("user", "password"))
+    intercept[IllegalUriException]{
+      Await.result(r.retrieve(), 1.second)
     }
   }
 
-  "Companion Object" should {
-    "be able to parse a configuration" in {
-      case class NameID(name: String, id: String)
-      object myProtocol extends DefaultJsonProtocol {
-        implicit val NameIDFormat = jsonFormat2(NameID)
-      }
-      import myProtocol._
-      implicit val materializer = ActorMaterializer()
-
-      val r = Request.forConfig[NameID]("slate")
-
-      r.link should be ("www.test.com")
-      r.credentials should be (BasicHttpCredentials("testUser", "testPassword"))
+  it should "should be unable to parse a request to a non-json endpoint" in {
+    case class NameID(name: String, id: String)
+    object myProtocol extends DefaultJsonProtocol {
+      implicit val NameIDFormat = jsonFormat2(NameID)
     }
+    import myProtocol._
+    implicit val materializer = ActorMaterializer()
 
-    "SingleRequest should be able to make a request" in {
-      case class NameID(name: String, id: String)
-      object myProtocol extends DefaultJsonProtocol {
-        implicit val NameIDFormat = jsonFormat2(NameID)
-      }
-      import myProtocol._
-      val r = Request.SingleRequest[NameID]("user", "password", "http://www.google.com")
-      intercept[UnsupportedContentTypeException]{
-        Await.result(r, 1.second)
-      }
+    val r = Request[NameID]("user", "password", "http://www.google.com")
+    intercept[UnsupportedContentTypeException]{
+      Await.result(r.retrieve(), 1.second)
     }
-
-    "SingleRequestForConfig should fail to parse an invalid uri" in {
-      case class NameID(name: String, id: String)
-      object myProtocol extends DefaultJsonProtocol {
-        implicit val NameIDFormat = jsonFormat2(NameID)
-      }
-      import myProtocol._
-      implicit val materializer = ActorMaterializer()
-
-      val r = Request.SingleRequestForConfig[NameID]("slate")
-      intercept[IllegalUriException] {
-        Await.result(r, 1.second)
-      }
-    }
-
-
   }
+
+
+
+  "Apply" should "be able to create a new Request" in {
+    case class NameID(name: String, id: String)
+    object myProtocol extends DefaultJsonProtocol {
+      implicit val NameIDFormat = jsonFormat2(NameID)
+    }
+    import myProtocol._
+    implicit val materializer = ActorMaterializer()
+
+    val r = Request[NameID]("user", "password", "link")
+
+    r.link should be ("link")
+    r.credentials should be (BasicHttpCredentials("user", "password"))
+  }
+
+  "forConfig" should "be able to parse a configuration" in {
+    case class NameID(name: String, id: String)
+    object myProtocol extends DefaultJsonProtocol {
+      implicit val NameIDFormat = jsonFormat2(NameID)
+    }
+    import myProtocol._
+    implicit val materializer = ActorMaterializer()
+
+    val r = Request.forConfig[NameID]("slate")
+
+    r.link should be ("www.test.com")
+    r.credentials should be (BasicHttpCredentials("testUser", "testPassword"))
+  }
+
+  "SingleRequest" should "should be able to make a request" in {
+    case class NameID(name: String, id: String)
+    object myProtocol extends DefaultJsonProtocol {
+      implicit val NameIDFormat = jsonFormat2(NameID)
+    }
+    import myProtocol._
+    val r = Request.SingleRequest[NameID]("user", "password", "http://www.google.com")
+    intercept[UnsupportedContentTypeException]{
+      Await.result(r, 1.second)
+    }
+  }
+
+  "SingleRequestForConfig" should "fail to parse an invalid uri" in {
+    case class NameID(name: String, id: String)
+    object myProtocol extends DefaultJsonProtocol {
+      implicit val NameIDFormat = jsonFormat2(NameID)
+    }
+    import myProtocol._
+    implicit val materializer = ActorMaterializer()
+
+    val r = Request.SingleRequestForConfig[NameID]("slate")
+    intercept[IllegalUriException] {
+      Await.result(r, 1.second)
+    }
+  }
+
 
   override def afterAll(): Unit = {
     Await.ready(system.terminate(), Duration.Inf)
