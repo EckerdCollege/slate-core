@@ -1,19 +1,16 @@
 package edu.eckerd.integrations.slate
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
-import akka.http.scaladsl.unmarshalling.Unmarshaller
+import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.unmarshalling.Unmarshaller.UnsupportedContentTypeException
-import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
+import akka.stream.ActorMaterializer
 import akka.testkit.TestKit
-import edu.eckerd.integrations.slate.core.{DefaultJsonProtocol, Request, RequestLike}
-import edu.eckerd.integrations.slate.core.model.SlateResponse
-import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers, WordSpecLike}
+import edu.eckerd.integrations.slate.core.{DefaultJsonProtocol, Request}
+import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 import org.scalamock.scalatest.MockFactory
 
 import scala.concurrent._
 import scala.concurrent.duration._
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 /**
   * Created by davenpcm on 7/7/16.
