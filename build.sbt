@@ -1,6 +1,6 @@
 lazy val buildSettings = Seq(
   organization := "edu.eckerd",
-  version := "0.1.0-SNAPSHOT",
+  version := "0.1.0",
   scalaVersion := "2.11.8",
   crossScalaVersions := Seq("2.11.8", "2.12.0-M5")
 )
