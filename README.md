@@ -1,4 +1,4 @@
-# Slate Core [![Build Status](https://travis-ci.org/ChristopherDavenport/slate-core.svg?branch=master)](https://travis-ci.org/ChristopherDavenport/slate-core) [![codecov](https://codecov.io/gh/ChristopherDavenport/slate-core/branch/master/graph/badge.svg)](https://codecov.io/gh/ChristopherDavenport/slate-core) [![Stories in Ready](https://badge.waffle.io/ChristopherDavenport/slate-core.png?label=ready&title=Ready)](https://waffle.io/ChristopherDavenport/slate-core)
+# Slate Core [![Build Status](https://travis-ci.org/EckerdCollege/slate-core.svg?branch=master)](https://travis-ci.org/EckerdCollege/slate-core) [![codecov](https://codecov.io/gh/EckerdCollege/slate-core/branch/master/graph/badge.svg)](https://codecov.io/gh/EckerdCollege/slate-core) [![Stories in Ready](https://badge.waffle.io/EckerdCollege/slate-core.png?label=ready&title=Ready)](https://waffle.io/EckerdCollege/slate-core) [![Maven Central](https://img.shields.io/maven-central/v/edu.eckerd/slate-core_2.11.svg?maxAge=2592000)](http://search.maven.org/#artifactdetails%7Cedu.eckerd%7Cslate-core_2.11%7C0.1.0%7Cjar)
 
 
 This is a base library for utilizing the ability to pull and parse
@@ -14,14 +14,10 @@ Request for the object.
 To make a request simply create a request and then retrieve it, or utilize the
 SingleRequest feature on the accompanying object. 
 
-Please be aware when looking at the code examples that currently akka http 
-is echoing an annoying but useless println which may show up mid-code 
-due to its asynchronous nature.
-
 To Utilize From SBT
 ```sbt
 resolvers += Resolver.sonatypeRepo("snapshots")
-libraryDependencies := "edu.eckerd" %% "slate-core" % "0.1.0-SNAPSHOT"
+libraryDependencies := "edu.eckerd" %% "slate-core" % "0.1.0"
 ```
 
 First You Must Have A Class and a Json Representation for the class
@@ -60,7 +56,6 @@ scala> val futureResponse = Request.SingleRequest[NameID]("user", "password", "h
 futureResponse: scala.concurrent.Future[Seq[NameID]] = List()
 
 scala> val response = Await.result(futureResponse, 1.second)
-sslConfig.config.loose.disableSNI = false
 response: Seq[NameID] = List(NameID(ExampleName,ExampleID))
 ```
 For Repeated Uses Utilize Your own actor system and actor materializer.
@@ -93,11 +88,9 @@ scala> val request = Request[NameID]("user", "password", "https://www.testendpoi
 request: edu.eckerd.integrations.slate.core.Request[NameID] = edu.eckerd.integrations.slate.core.Request@6588186d
 
 scala> val r1 = request.retrieve
-sslConfig.config.loose.disableSNI = false
 r1: scala.concurrent.Future[Seq[NameID]] = List()
 
 scala> val r2 = request.retrieve
-sslConfig.config.loose.disableSNI = false
 r2: scala.concurrent.Future[Seq[NameID]] = List()
 
 scala> val response1 = r1 onComplete {
