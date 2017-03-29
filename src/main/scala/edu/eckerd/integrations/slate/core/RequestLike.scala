@@ -9,9 +9,6 @@ import edu.eckerd.integrations.slate.core.model.SlateResponse
 
 import scala.concurrent.{ExecutionContext, Future}
 
-/**
-  * Created by davenpcm on 7/26/16.
-  */
 trait RequestLike[A] extends HasSlateSession {
   type HttpResponder = HttpRequest => Future[HttpResponse]
   def responder: HttpResponder

@@ -14,7 +14,7 @@ import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 /**
-  * Created by davenpcm on 7/26/16. This file is for parsing Business Logic, where request is the piece that actually
+  * This file is for parsing Business Logic, where request is the piece that actually
   * goes out with an Http session and does something so test regarding parsing logic should be placed here.
   */
 class RequestLikeSpec extends TestKit(ActorSystem("RequestLikeSpec"))
