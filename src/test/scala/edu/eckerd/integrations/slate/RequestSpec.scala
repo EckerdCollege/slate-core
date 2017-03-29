@@ -12,9 +12,7 @@ import org.scalamock.scalatest.MockFactory
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
-/**
-  * Created by davenpcm on 7/7/16.
-  */
+
 class RequestSpec extends TestKit(ActorSystem("RequestSpec"))
   with FlatSpecLike with Matchers with MockFactory with BeforeAndAfterAll {
 

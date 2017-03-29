@@ -2,18 +2,13 @@ package edu.eckerd.integrations.slate.core
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse, ResponseEntity, StatusCodes}
-import akka.http.scaladsl.unmarshalling.{Unmarshal, Unmarshaller}
+import akka.http.scaladsl.model.headers.BasicHttpCredentials
+import akka.http.scaladsl.model.ResponseEntity
+import akka.http.scaladsl.unmarshalling.Unmarshaller
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import com.typesafe.config.ConfigFactory
 import edu.eckerd.integrations.slate.core.model.SlateResponse
 import scala.concurrent.{ExecutionContext, Future}
-/**
-  * Created by davenpcm on 7/7/16.
-  */
-
-
 
 class Request[A](val credentials: BasicHttpCredentials, val link: String)(
                   implicit val actorSystem: ActorSystem,
