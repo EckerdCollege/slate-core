@@ -1,17 +1,19 @@
 lazy val buildSettings = Seq(
   organization := "edu.eckerd",
   version := "0.1.0",
-  scalaVersion := "2.11.8",
-  crossScalaVersions := Seq("2.11.8", "2.12.0-M5")
+  scalaVersion := "2.12.1",
+  crossScalaVersions := Seq("2.11.8", "2.12.1")
 )
 
 lazy val dependencySettings = Seq(
   libraryDependencies ++= {
+//    val akkaV = "2.4.17"
+    val akkaHttpV = "10.0.5"
     Seq(
-      "com.typesafe.akka" %% "akka-http-core" % "2.4.7",
-      "com.typesafe.akka" %% "akka-http-spray-json-experimental" % "2.4.7",
-      "com.typesafe.akka" %% "akka-http-testkit" % "2.4.7" % "test",
-      "org.scalamock" %% "scalamock-scalatest-support" % "3.2.2" % "test"
+      "com.typesafe.akka" %% "akka-http" % akkaHttpV,
+      "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpV,
+      "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test",
+      "org.scalamock" %% "scalamock-scalatest-support" % "3.5.0" % "test"
     )
   }
 )
@@ -44,12 +46,12 @@ lazy val publishSettings = Seq(
   publishMavenStyle := true,
   publishArtifact in Test := false,
   pomIncludeRepository := { _ => false },
-  publishTo <<= version { (v: String) =>
+  publishTo := {
     val nexus = "https://oss.sonatype.org/"
-    if (v.trim.endsWith("SNAPSHOT"))
-      Some("snapshots" at nexus + "content/repositories/snapshots")
+    if (isSnapshot.value)
+      Some("Snapshots" at nexus + "content/repositories/snapshots")
     else
-      Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+      Some("Releases" at nexus + "service/local/staging/deploy/maven2")
   },
   homepage := Some(url("https://github.com/ChristopherDavenport/slate-core")),
   licenses := Seq("Apache 2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
