@@ -1,4 +1,4 @@
-# Slate Core [![Build Status](https://travis-ci.org/EckerdCollege/slate-core.svg?branch=master)](https://travis-ci.org/EckerdCollege/slate-core) [![codecov](https://codecov.io/gh/EckerdCollege/slate-core/branch/master/graph/badge.svg)](https://codecov.io/gh/EckerdCollege/slate-core) [![Stories in Ready](https://badge.waffle.io/EckerdCollege/slate-core.png?label=ready&title=Ready)](https://waffle.io/EckerdCollege/slate-core) [![Maven Central](https://img.shields.io/maven-central/v/edu.eckerd/slate-core_2.11.svg?maxAge=2592000)](http://search.maven.org/#artifactdetails%7Cedu.eckerd%7Cslate-core_2.11%7C0.1.0%7Cjar)
+# Slate Core [![Build Status](https://travis-ci.org/EckerdCollege/slate-core.svg?branch=master)](https://travis-ci.org/EckerdCollege/slate-core) [![codecov](https://codecov.io/gh/EckerdCollege/slate-core/branch/master/graph/badge.svg)](https://codecov.io/gh/EckerdCollege/slate-core) [![Maven Central](https://img.shields.io/maven-central/v/edu.eckerd/slate-core_2.11.svg?maxAge=2592000)](http://search.maven.org/#artifactdetails%7Cedu.eckerd%7Cslate-core_2.11%7C0.1.0%7Cjar)
 
 
 This is a base library for utilizing the ability to pull and parse
