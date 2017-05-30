@@ -1,14 +1,13 @@
 lazy val buildSettings = Seq(
   organization := "edu.eckerd",
-  version := "0.1.0",
-  scalaVersion := "2.12.1",
-  crossScalaVersions := Seq("2.11.8", "2.12.1")
+  version := "0.1.1",
+  scalaVersion := "2.12.2",
+  crossScalaVersions := Seq("2.11.11", scalaVersion.value)
 )
 
 lazy val dependencySettings = Seq(
   libraryDependencies ++= {
-//    val akkaV = "2.4.17"
-    val akkaHttpV = "10.0.5"
+    val akkaHttpV = "10.0.7"
     Seq(
       "com.typesafe.akka" %% "akka-http" % akkaHttpV,
       "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpV,
@@ -53,11 +52,11 @@ lazy val publishSettings = Seq(
     else
       Some("Releases" at nexus + "service/local/staging/deploy/maven2")
   },
-  homepage := Some(url("https://github.com/ChristopherDavenport/slate-core")),
+  homepage := Some(url("https://github.com/EckerdCollege/slate-core")),
   licenses := Seq("Apache 2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
   scmInfo := Some(ScmInfo(
-    url("https://github.com/ChristopherDavenport/slate-core"),
-    "scm:git@github.com:ChristopherDavenport/slate-core.git")),
+    url("https://github.com/EckerdCollege/slate-core"),
+    "scm:git@github.com:EckerdCollege/slate-core.git")),
   pomExtra := (
     <developers>
       <developer>
