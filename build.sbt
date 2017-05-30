@@ -1,6 +1,6 @@
 lazy val buildSettings = Seq(
   organization := "edu.eckerd",
-  version := "0.1.1",
+  version := "0.1.2-SNAPSHOT",
   scalaVersion := "2.12.2",
   crossScalaVersions := Seq("2.11.11", scalaVersion.value)
 )
@@ -81,7 +81,7 @@ lazy val coreSettings = buildSettings ++ commonSettings ++ publishSettings ++
 lazy val root = project.in(file("."))
   .settings(moduleName := "slate-core")
   .settings(coreSettings:_*)
-  .settings(noPublishSettings)
+  .settings(publishSettings)
 
 credentials in ThisBuild ++= (for {
   username <- Option(System.getenv().get("SONATYPE_USERNAME"))
